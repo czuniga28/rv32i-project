@@ -33,7 +33,7 @@ def write_word(core, addr, word):
 def parse_reg(s):
     """Parse register string 'x0'..'x31' into an integer 0..31."""
     s = s.strip().lower()
-    if not s.startswith("x"):
+    if not s.startswith("x") or not s[1:].isdigit():
         raise ValueError(f"Invalid register name '{s}', expected 'x0'..'x31'")
     reg_num = int(s[1:])
     if not (0 <= reg_num <= 31):
@@ -43,7 +43,10 @@ def parse_reg(s):
 
 def parse_imm(s):
     """Parse integer immediate supporting decimal, hex, and optional sign."""
-    return int(s.strip(), 0)
+    try:
+        return int(s.strip(), 0)
+    except ValueError:
+        raise ValueError(f"Invalid number literal '{s}'")
 
 
 def parse_offset_base(s):
@@ -55,6 +58,23 @@ def parse_offset_base(s):
     offset = parse_imm(match.group(1))
     rs1 = parse_reg(match.group(2))
     return offset, rs1
+
+
+def check_arg_count(op, args, expected):
+    """Validate that the argument list has the expected number of operands."""
+    if len(args) != expected:
+        raise ValueError(
+            f"Instruction '{op}' requires {expected} operand(s), but got {len(args)}"
+        )
+
+
+def check_imm_range(imm, min_val, max_val, desc="Immediate"):
+    """Validate that an immediate or offset is within [min_val, max_val]."""
+    if not (min_val <= imm <= max_val):
+        hex_hint = f" (0x{imm:x})" if imm >= 0 else f" (-0x{-imm:x})"
+        raise ValueError(
+            f"{desc} {imm}{hex_hint} out of allowed range [{min_val}, {max_val}]"
+        )
 
 
 # --- RISC-V 32I instruction encoders ---
@@ -71,6 +91,7 @@ def encode_r(funct7, rs2, rs1, funct3, rd, opcode=0x33):
 
 
 def encode_i(imm, rs1, funct3, rd, opcode=0x13):
+    check_imm_range(imm, -2048, 2047, "12-bit signed immediate")
     return (
         ((imm & 0xFFF) << 20)
         | ((rs1 & 0x1F) << 15)
@@ -81,6 +102,7 @@ def encode_i(imm, rs1, funct3, rd, opcode=0x13):
 
 
 def encode_shift(funct7, shamt, rs1, funct3, rd, opcode=0x13):
+    check_imm_range(shamt, 0, 31, "Shift amount")
     return (
         ((funct7 & 0x7F) << 25)
         | ((shamt & 0x1F) << 20)
@@ -92,6 +114,7 @@ def encode_shift(funct7, shamt, rs1, funct3, rd, opcode=0x13):
 
 
 def encode_u(imm, rd, opcode):
+    check_imm_range(imm, -524288, 0xFFFFF, "20-bit upper immediate")
     return (
         ((imm & 0xFFFFF) << 12)
         | ((rd & 0x1F) << 7)
@@ -100,6 +123,11 @@ def encode_u(imm, rd, opcode):
 
 
 def encode_b(imm, rs1, rs2, funct3, opcode=0x63):
+    if imm % 2 != 0:
+        raise ValueError(
+            f"Branch offset must be a multiple of 2 (even), got odd offset {imm}"
+        )
+    check_imm_range(imm, -4096, 4094, "Branch offset")
     imm_12 = (imm >> 12) & 0x1
     imm_10_5 = (imm >> 5) & 0x3F
     imm_4_1 = (imm >> 1) & 0xF
@@ -117,6 +145,11 @@ def encode_b(imm, rs1, rs2, funct3, opcode=0x63):
 
 
 def encode_j(imm, rd, opcode=0x6F):
+    if imm % 2 != 0:
+        raise ValueError(
+            f"Jump offset must be a multiple of 2 (even), got odd offset {imm}"
+        )
+    check_imm_range(imm, -1048576, 1048574, "Jump offset")
     imm_20 = (imm >> 20) & 0x1
     imm_10_1 = (imm >> 1) & 0x3FF
     imm_11 = (imm >> 11) & 0x1
@@ -178,45 +211,58 @@ def assemble_instruction(line):
     args = [arg.strip() for arg in args_str.split(",") if arg.strip()]
 
     if op == "ebreak":
+        check_arg_count(op, args, 0)
         return 0x00100073
 
     elif op == "lui":
+        check_arg_count(op, args, 2)
         rd = parse_reg(args[0])
         imm = parse_imm(args[1])
         return encode_u(imm, rd, 0x37)
 
     elif op == "auipc":
+        check_arg_count(op, args, 2)
         rd = parse_reg(args[0])
         imm = parse_imm(args[1])
         return encode_u(imm, rd, 0x17)
 
     elif op == "jal":
+        check_arg_count(op, args, 2)
         rd = parse_reg(args[0])
         offset = parse_imm(args[1])
         return encode_j(offset, rd, 0x6F)
 
     elif op == "jalr":
-        rd = parse_reg(args[0])
         if len(args) == 2:
+            rd = parse_reg(args[0])
             offset, rs1 = parse_offset_base(args[1])
-        else:
+        elif len(args) == 3:
+            rd = parse_reg(args[0])
             rs1 = parse_reg(args[1])
             offset = parse_imm(args[2])
+        else:
+            raise ValueError(
+                f"Instruction 'jalr' requires 2 operands ('rd, offset(rs1)') "
+                f"or 3 operands ('rd, rs1, offset'), but got {len(args)}"
+            )
         return encode_i(offset, rs1, 0x0, rd, 0x67)
 
     elif op in B_INSTRUCTIONS:
+        check_arg_count(op, args, 3)
         rs1 = parse_reg(args[0])
         rs2 = parse_reg(args[1])
         offset = parse_imm(args[2])
         return encode_b(offset, rs1, rs2, B_INSTRUCTIONS[op], 0x63)
 
     elif op in I_ARITH_INSTRUCTIONS:
+        check_arg_count(op, args, 3)
         rd = parse_reg(args[0])
         rs1 = parse_reg(args[1])
         imm = parse_imm(args[2])
         return encode_i(imm, rs1, I_ARITH_INSTRUCTIONS[op], rd, 0x13)
 
     elif op in I_SHIFT_INSTRUCTIONS:
+        check_arg_count(op, args, 3)
         rd = parse_reg(args[0])
         rs1 = parse_reg(args[1])
         shamt = parse_imm(args[2])
@@ -224,6 +270,7 @@ def assemble_instruction(line):
         return encode_shift(funct7, shamt, rs1, funct3, rd, 0x13)
 
     elif op in R_INSTRUCTIONS:
+        check_arg_count(op, args, 3)
         rd = parse_reg(args[0])
         rs1 = parse_reg(args[1])
         rs2 = parse_reg(args[2])
