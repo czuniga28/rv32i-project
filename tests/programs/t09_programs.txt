@@ -1,0 +1,26 @@
+# t09 - Sistema: programas completos con lazos.
+# Esperado: x10 = 55 (suma 1..10), x11 = 6765 (Fibonacci(20)), x12 = 5535 (123*45)
+addi  x1, x0, 10         # 0x00  suma 1..10
+addi  x10, x0, 0         # 0x04
+add   x10, x10, x1       # 0x08  lazo
+addi  x1, x1, -1         # 0x0c
+bne   x1, x0, -8         # 0x10  -> 0x08
+addi  x2, x0, 0          # 0x14  Fibonacci: a = 0
+addi  x3, x0, 1          # 0x18  b = 1
+addi  x4, x0, 20         # 0x1c  n = 20
+add   x5, x2, x3         # 0x20  lazo: t = a + b
+addi  x2, x3, 0          # 0x24  a = b
+addi  x3, x5, 0          # 0x28  b = t
+addi  x4, x4, -1         # 0x2c
+bne   x4, x0, -16        # 0x30  -> 0x20
+addi  x11, x2, 0         # 0x34  x11 = F(20)
+addi  x6, x0, 123        # 0x38  multiplicación por suma y desplazamiento
+addi  x7, x0, 45         # 0x3c
+addi  x12, x0, 0         # 0x40  producto
+andi  x8, x7, 1          # 0x44  lazo: bit menos significativo del multiplicador
+beq   x8, x0, 8          # 0x48  -> 0x50 si el bit es 0
+add   x12, x12, x6       # 0x4c
+slli  x6, x6, 1          # 0x50
+srli  x7, x7, 1          # 0x54
+bne   x7, x0, -20        # 0x58  -> 0x44
+ebreak                   # 0x5c

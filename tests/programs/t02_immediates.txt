@@ -1,0 +1,18 @@
+# t02 - Generador de inmediatos: extremos de I y U, extensión de signo
+addi  x1, x0, 2047       # 0x00  máximo I: 0x000007ff
+addi  x2, x0, -2048      # 0x04  mínimo I: 0xfffff800
+addi  x3, x0, -1         # 0x08  0xffffffff
+lui   x4, 0xfffff        # 0x0c  0xfffff000
+lui   x5, 0x80000        # 0x10  0x80000000
+lui   x6, 0              # 0x14  0
+lui   x7, 0x12345        # 0x18
+addi  x7, x7, 0x678      # 0x1c  x7 = 0x12345678 (lui + addi positivo)
+lui   x8, 0x12345        # 0x20
+addi  x8, x8, -1         # 0x24  x8 = 0x12344fff (el addi extiende signo)
+auipc x9, 0              # 0x28  x9 = pc = 0x28
+auipc x10, 0xfffff       # 0x2c  x10 = 0x2c + 0xfffff000 = 0xfffff02c
+andi  x11, x3, 2047      # 0x30  0x000007ff
+ori   x12, x0, -2048     # 0x34  0xfffff800 (inmediato lógico también extiende signo)
+slli  x13, x1, 0         # 0x38  shamt 0: 0x7ff
+slli  x14, x3, 31        # 0x3c  shamt 31: 0x80000000
+ebreak                   # 0x40

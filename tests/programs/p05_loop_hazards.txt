@@ -1,0 +1,16 @@
+# p05 - Lazo cerrado con hazards de datos y de control combinados, y branches
+# tomados consecutivos. Esperado: x1 = 0, x2 = 255, x3 = 256, x31 = 0
+addi  x1, x0, 8          # 0x00  n
+addi  x2, x0, 0          # 0x04  acumulador
+addi  x3, x0, 1          # 0x08  i
+add   x2, x2, x3         # 0x0c  lazo: acc += i
+slli  x3, x3, 1          # 0x10  i <<= 1
+addi  x1, x1, -1         # 0x14
+bne   x1, x0, -12        # 0x18  depende de x1 (distancia 1) -> 0x0c
+beq   x0, x0, 8          # 0x1c  tomado -> 0x24
+addi  x31, x31, 1        # 0x20  NO
+beq   x0, x0, 8          # 0x24  tomado justo después de otro tomado -> 0x2c
+addi  x31, x31, 1        # 0x28  NO
+jal   x0, 8              # 0x2c  -> 0x34
+addi  x31, x31, 1        # 0x30  NO
+ebreak                   # 0x34

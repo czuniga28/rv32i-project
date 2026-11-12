@@ -1,0 +1,10 @@
+# p03 - x0 nunca se adelanta: escribir x0 y leerlo justo después debe dar 0
+# Esperado: x1 = 0, x2 = 0, x3 = 0, x4 = 1
+addi  x0, x0, 5          # 0x00  escritura a x0 (se descarta)
+add   x1, x0, x0         # 0x04  x1 = 0 (si se adelantara el 5, daría 10)
+addi  x0, x0, 9          # 0x08
+addi  x2, x0, 0          # 0x0c  x2 = 0
+lui   x0, 0xfffff        # 0x10
+sub   x3, x0, x0         # 0x14  x3 = 0
+addi  x4, x0, 1          # 0x18  x4 = 1
+ebreak                   # 0x1c

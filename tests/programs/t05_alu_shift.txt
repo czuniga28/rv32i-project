@@ -1,0 +1,18 @@
+# t05 - Desplazamientos: 0, 31, aritmético vs lógico, solo 5 bits de rs2
+addi  x1, x0, -8         # 0x00  0xfffffff8
+addi  x2, x0, 33         # 0x04  33 & 31 = 1: los bits altos de rs2 se ignoran
+addi  x3, x0, 1          # 0x08
+slli  x4, x3, 31         # 0x0c  0x80000000
+srli  x5, x4, 31         # 0x10  1
+srai  x6, x4, 31         # 0x14  0xffffffff
+srai  x7, x1, 2          # 0x18  0xfffffffe
+srli  x8, x1, 2          # 0x1c  0x3ffffffe
+sll   x9, x3, x2         # 0x20  2
+srl   x10, x1, x2        # 0x24  0x7ffffffc
+sra   x11, x1, x2        # 0x28  0xfffffffc
+sll   x12, x1, x0        # 0x2c  desplazar 0: 0xfffffff8
+addi  x13, x0, 31        # 0x30
+sra   x14, x4, x13       # 0x34  0xffffffff
+srl   x15, x4, x13       # 0x38  1
+slli  x16, x1, 0         # 0x3c  0xfffffff8
+ebreak                   # 0x40

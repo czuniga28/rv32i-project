@@ -1,0 +1,15 @@
+# t04 - ALU lógica: and/or/xor con registros e inmediatos con signo
+lui   x1, 0xf0f0f        # 0x00
+addi  x1, x1, 0x0f0      # 0x04  x1 = 0xf0f0f0f0
+lui   x2, 0x0ff00        # 0x08
+addi  x2, x2, 0x0ff      # 0x0c  x2 = 0x0ff000ff
+and   x3, x1, x2         # 0x10  0x00f000f0
+or    x4, x1, x2         # 0x14  0xfff0f0ff
+xor   x5, x1, x2         # 0x18  0xff00f00f
+xori  x6, x1, -1         # 0x1c  NOT x1 = 0x0f0f0f0f
+andi  x7, x1, -16        # 0x20  0xf0f0f0f0
+andi  x8, x1, 0x0ff      # 0x24  0x000000f0
+ori   x9, x2, -2048      # 0x28  0xfffff8ff
+xori  x10, x2, 0x7ff     # 0x2c  0x0ff00700
+xor   x11, x1, x1        # 0x30  0
+ebreak                   # 0x34

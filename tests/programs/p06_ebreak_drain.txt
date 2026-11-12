@@ -1,0 +1,9 @@
+# p06 - Fin de programa: las instrucciones anteriores al ebreak se completan
+# y las posteriores nunca escriben. Esperado: x1 = 1, x2 = 2, x3 = 3, x31 = 0, pc = 0x0c
+addi  x1, x0, 1          # 0x00
+addi  x2, x0, 2          # 0x04
+addi  x3, x0, 3          # 0x08  justo antes del ebreak: debe completarse
+ebreak                   # 0x0c
+addi  x31, x0, 1         # 0x10  NO
+addi  x31, x0, 2         # 0x14  NO
+addi  x31, x0, 3         # 0x18  NO

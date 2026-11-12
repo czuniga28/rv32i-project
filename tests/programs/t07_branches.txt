@@ -1,0 +1,61 @@
+# t07 - Comparador de branches: cada tipo tomado y no tomado, iguales,
+# signo vs sin signo, y un lazo hacia atrás.
+# Esperado: x20 = 10 (tomados), x21 = 8 (no tomados), x31 = 0, x6 = 5
+addi  x1, x0, -1         # 0x00  x1 = -1 (0xffffffff)
+addi  x2, x0, 1          # 0x04
+addi  x3, x0, 1          # 0x08  x3 == x2
+lui   x4, 0x80000        # 0x0c  x4 = INT_MIN
+# --- tomados: saltan el veneno (x31) y caen en el contador x20
+beq   x2, x3, 8          # 0x10  tomado: 1 == 1
+addi  x31, x31, 1        # 0x14  NO debe ejecutarse
+addi  x20, x20, 1        # 0x18
+bne   x1, x2, 8          # 0x1c  tomado: -1 != 1
+addi  x31, x31, 1        # 0x20  NO debe ejecutarse
+addi  x20, x20, 1        # 0x24
+blt   x1, x2, 8          # 0x28  tomado: -1 < 1 con signo
+addi  x31, x31, 1        # 0x2c  NO debe ejecutarse
+addi  x20, x20, 1        # 0x30
+blt   x4, x1, 8          # 0x34  tomado: INT_MIN < -1
+addi  x31, x31, 1        # 0x38  NO debe ejecutarse
+addi  x20, x20, 1        # 0x3c
+bge   x2, x1, 8          # 0x40  tomado: 1 >= -1
+addi  x31, x31, 1        # 0x44  NO debe ejecutarse
+addi  x20, x20, 1        # 0x48
+bge   x2, x3, 8          # 0x4c  tomado: iguales
+addi  x31, x31, 1        # 0x50  NO debe ejecutarse
+addi  x20, x20, 1        # 0x54
+bltu  x2, x1, 8          # 0x58  tomado: 1 < 0xffffffff
+addi  x31, x31, 1        # 0x5c  NO debe ejecutarse
+addi  x20, x20, 1        # 0x60
+bgeu  x1, x2, 8          # 0x64  tomado: 0xffffffff >= 1
+addi  x31, x31, 1        # 0x68  NO debe ejecutarse
+addi  x20, x20, 1        # 0x6c
+bgeu  x2, x3, 8          # 0x70  tomado: iguales
+addi  x31, x31, 1        # 0x74  NO debe ejecutarse
+addi  x20, x20, 1        # 0x78
+beq   x0, x0, 8          # 0x7c  tomado: incondicional
+addi  x31, x31, 1        # 0x80  NO debe ejecutarse
+addi  x20, x20, 1        # 0x84
+# --- no tomados: siguen a la instrucción siguiente (contador x21)
+beq   x1, x2, 8          # 0x88  no tomado: -1 != 1
+addi  x21, x21, 1        # 0x8c
+bne   x2, x3, 8          # 0x90  no tomado: iguales
+addi  x21, x21, 1        # 0x94
+blt   x2, x1, 8          # 0x98  no tomado: 1 < -1 falso
+addi  x21, x21, 1        # 0x9c
+blt   x2, x3, 8          # 0xa0  no tomado: iguales
+addi  x21, x21, 1        # 0xa4
+bge   x1, x2, 8          # 0xa8  no tomado: -1 >= 1 falso
+addi  x21, x21, 1        # 0xac
+bltu  x1, x2, 8          # 0xb0  no tomado: 0xffffffff < 1 falso
+addi  x21, x21, 1        # 0xb4
+bltu  x2, x3, 8          # 0xb8  no tomado: iguales
+addi  x21, x21, 1        # 0xbc
+bgeu  x2, x1, 8          # 0xc0  no tomado: 1 >= 0xffffffff falso
+addi  x21, x21, 1        # 0xc4
+# --- lazo hacia atrás: 5 iteraciones
+addi  x5, x0, 5          # 0xc8
+addi  x6, x6, 1          # 0xcc
+addi  x5, x5, -1         # 0xd0
+bne   x5, x0, -8         # 0xd4  -> 0xcc
+ebreak                   # 0xd8

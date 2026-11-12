@@ -1,0 +1,25 @@
+# p04 - Hazards de control: branches y saltos que dependen de la instrucción
+# anterior, y instrucciones del camino incorrecto que deben anularse.
+# Incluye ebreak en el camino incorrecto, que NO debe detener el programa.
+# Esperado: x31 = 0, x2 = 1, x3 = 4, x5 = 0x20, x6 = 0x28, x7 = 0x30, x8 = 8, x9 = 9
+addi  x1, x0, 3          # 0x00
+beq   x1, x0, 12         # 0x04  depende de x1 (distancia 1); no tomado
+addi  x2, x0, 1          # 0x08  se ejecuta
+bne   x1, x2, 12         # 0x0c  depende de x2 (distancia 1); tomado -> 0x18
+addi  x31, x31, 1        # 0x10  camino incorrecto
+addi  x31, x31, 1        # 0x14  camino incorrecto
+addi  x3, x0, 4          # 0x18
+jal   x5, 12             # 0x1c  -> 0x28, x5 = 0x20
+addi  x31, x31, 1        # 0x20  camino incorrecto
+addi  x31, x31, 1        # 0x24  camino incorrecto
+auipc x6, 0              # 0x28  x6 = 0x28
+jalr  x7, 12(x6)         # 0x2c  depende de x6 (distancia 1) -> 0x34, x7 = 0x30
+addi  x31, x31, 1        # 0x30  camino incorrecto
+beq   x0, x0, 8          # 0x34  tomado -> 0x3c
+ebreak                   # 0x38  camino incorrecto: NO debe detener
+addi  x8, x0, 8          # 0x3c
+bne   x8, x0, 12         # 0x40  depende de x8; tomado -> 0x4c
+ebreak                   # 0x44  camino incorrecto
+addi  x31, x31, 1        # 0x48  camino incorrecto
+addi  x9, x0, 9          # 0x4c
+ebreak                   # 0x50

@@ -1,0 +1,25 @@
+# t08 - jal/jalr: link, hacia adelante y atrás, bit 0 de jalr, rd == rs1,
+# llamada y retorno de función. Esperado: x31 = 0
+jal   x1, 16             # 0x00  -> 0x10, x1 = 0x04
+addi  x31, x31, 1        # 0x04  NO
+addi  x10, x10, 1        # 0x08  llegada del jal hacia atrás: x10 = 1
+jal   x0, 16             # 0x0c  -> 0x1c, sin link
+jal   x2, -8             # 0x10  -> 0x08 (hacia atrás), x2 = 0x14
+addi  x31, x31, 1        # 0x14  NO
+addi  x31, x31, 1        # 0x18  NO
+auipc x3, 0              # 0x1c  x3 = 0x1c
+jalr  x4, 17(x3)         # 0x20  0x1c + 17 = 0x2d, bit 0 se limpia -> 0x2c; x4 = 0x24
+addi  x31, x31, 1        # 0x24  NO
+addi  x31, x31, 1        # 0x28  NO
+addi  x5, x0, 0x40       # 0x2c  x5 = 0x40
+jalr  x5, -4(x5)         # 0x30  rd == rs1: destino usa el x5 VIEJO -> 0x3c; x5 = 0x34
+addi  x31, x31, 1        # 0x34  NO
+addi  x31, x31, 1        # 0x38  NO
+addi  x11, x0, 1         # 0x3c  x11 = 1
+jal   x0, 8              # 0x40  -> 0x48
+addi  x31, x31, 1        # 0x44  NO
+jal   x1, 12             # 0x48  llamada -> 0x54, x1 = 0x4c
+addi  x12, x0, 7         # 0x4c  después del retorno: x12 = 7
+ebreak                   # 0x50
+addi  x13, x0, 9         # 0x54  "función": x13 = 9
+jalr  x0, 0(x1)          # 0x58  retorno -> 0x4c

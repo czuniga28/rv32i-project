@@ -1,0 +1,18 @@
+# p02 - Hazards RAW a distancias 1, 2 y 3, y dos escrituras seguidas al mismo registro
+# Esperado: x2 = 5, x4 = 7, x6 = 9, x8 = 2 (el valor más reciente), x9 = 12
+addi  x1, x0, 5          # 0x00  productor
+addi  x10, x0, 1         # 0x04  relleno
+addi  x11, x0, 1         # 0x08  relleno
+add   x2, x1, x0         # 0x0c  distancia 3 (escritura y lectura del banco en el mismo ciclo)
+addi  x3, x0, 7          # 0x10  productor
+addi  x12, x0, 1         # 0x14  relleno
+add   x4, x3, x0         # 0x18  distancia 2
+addi  x5, x0, 9          # 0x1c  productor
+add   x6, x5, x0         # 0x20  distancia 1
+addi  x7, x0, 1          # 0x24  primer productor de x7
+addi  x7, x0, 2          # 0x28  segundo productor de x7 (más reciente)
+add   x8, x7, x0         # 0x2c  debe ver 2, no 1
+addi  x9, x0, 3          # 0x30
+addi  x9, x9, 4          # 0x34  7
+addi  x9, x9, 5          # 0x38  12
+ebreak                   # 0x3c
